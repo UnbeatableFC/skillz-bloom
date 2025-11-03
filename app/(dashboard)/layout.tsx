@@ -1,4 +1,3 @@
-// app/dashboard/layout.tsx
 "use client";
 
 import { SignOutButton, UserButton, useUser } from "@clerk/nextjs";
@@ -8,10 +7,11 @@ import { redirect, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogOut, Menu, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+
 import { navItems } from "@/lib/data";
 import ModeToggle from "@/components/general/mode-toggle";
 import { Spinner } from "@/components/ui/spinner";
+import Link from "next/link";
 
 export default function DashboardLayout({
   children,
@@ -69,7 +69,6 @@ export default function DashboardLayout({
   if (onboardingStatus === false) {
     redirect("/onboarding");
   }
-
 
   // If status is true, or user is not signed in (Clerk will redirect), render children
   return (

@@ -45,10 +45,10 @@ const OnboardingGatekeeper = ({
             router.push("/onboarding");
           }
 
-          if (userData.onboardingComplete === true) {
-            // Redirect if complete and user has already onboarded
-            router.push("/dashboard");
-          }
+          // if (userData.onboardingComplete === true) {
+          //   // Redirect if complete and user has already onboarded
+           
+          // }
         } else {
           // B. User does NOT exist (First-Time Sign-Up/Sign-In)
           await setDoc(userRef, {

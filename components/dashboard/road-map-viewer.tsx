@@ -8,10 +8,12 @@ import { Loader2, Zap } from "lucide-react";
 import RoadmapPhaseCard from "./road-map-card";
 import { db } from "@/lib/firebase";
 import { LearningPathKey, MasterRoadmap, RoadmapPhase } from "@/types/types";
+import { useRouter } from "next/navigation";
 
 // --- Component ---
 const RoadMapViewer = () => {
   const { user, isLoaded, isSignedIn } = useUser();
+  const router = useRouter()
 
   const [roadmapData, setRoadmapData] = useState<
     | (MasterRoadmap & {
@@ -122,7 +124,7 @@ const RoadMapViewer = () => {
   const { title, careerGoal, learningPath, roadmap } = roadmapData;
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans p-4 sm:p-8">
+    <div className="min-h-screen font-sans px-4 sm:px-8">
       <header className="mb-10 text-center">
         <h1 className="text-4xl font-extrabold text-gray-900 leading-tight">
           Your <span className="text-indigo-600">{title}</span>{" "}
@@ -148,6 +150,7 @@ const RoadMapViewer = () => {
             phase={phase}
             isCurrent={phase.status === "active"}
             isCompleted={phase.status === "completed"}
+            viewDailyTask={() => router.push("/tasks")}
           />
         ))}
       </div>
