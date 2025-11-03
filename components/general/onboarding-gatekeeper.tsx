@@ -45,10 +45,10 @@ const OnboardingGatekeeper = ({
             router.push("/onboarding");
           }
 
-          // if (userData.onboardingComplete === true) {
-          //   // Redirect if complete and user has already onboarded
-           
-          // }
+          if (userData.onboardingComplete === true) {
+            // Redirect if complete and user has already onboarded
+           router.push("/dashboard");
+          }
         } else {
           // B. User does NOT exist (First-Time Sign-Up/Sign-In)
           await setDoc(userRef, {
@@ -77,7 +77,7 @@ const OnboardingGatekeeper = ({
     if (isLoaded && isSignedIn) {
       checkAndSeedUser();
     }
-  }, [isLoaded, isSignedIn, user, router, pathname]);
+  } , []);
 
   // Block rendering while checking status or if user state is unknown
   if (isChecking || !isLoaded) {
