@@ -4,8 +4,8 @@ import RoadMapViewer from "@/components/dashboard/road-map-viewer";
 const DashboardPage = () => {
   return (
     <div>
-      <RoadMapViewer />
-      {/* <AICoachChat /> */}
+      {/* <RoadMapViewer /> */}
+      <AICoachChat />
     </div>
   );
 };
