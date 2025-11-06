@@ -92,6 +92,35 @@ const RoadMapViewer = () => {
     return () => unsubscribe();
   }, [user, isLoaded, isSignedIn]);
 
+  // --- Helper function to navigate to specific task ---
+  const handleViewDailyTasks = () => {
+    // Get the first incomplete task from the active phase
+    const allPhases = (roadmapData)?.roadmap ?? (roadmapData)?.phases ?? [];
+    const activePhase = allPhases.find((p) => p.status === "active");
+    
+    if (activePhase) {
+      const activeModule = activePhase.modules.find(
+        (m) => m.module_status !== "completed"
+      );
+      
+      if (activeModule && activeModule.tasks.length > 0) {
+        const firstTask = activeModule.tasks.find(
+          (t) => t.task_status === "not-started"
+        );
+        
+        if (firstTask) {
+          router.push(`/tasks?activeTask=${encodeURIComponent(firstTask.name)}`);
+        } else {
+          router.push("/tasks");
+        }
+      } else {
+        router.push("/tasks");
+      }
+    } else {
+      router.push("/tasks");
+    }
+  };
+
   // --- Loading State ---
   if (isLoading) {
     return (
@@ -112,7 +141,7 @@ const RoadMapViewer = () => {
         <h2 className="text-2xl font-bold text-red-800 mb-2">
           Roadmap Load Error
         </h2>
-        <p className="text-red-700">;
+        <p className="text-red-700">
           {error ||
             "Data is missing. Please complete your onboarding process."}
         </p>
@@ -121,7 +150,9 @@ const RoadMapViewer = () => {
   }
 
   // --- Render Logic ---
-  const { title, careerGoal, learningPath, roadmap } = roadmapData;
+  const { title, careerGoal, learningPath } = roadmapData;
+  const phases: RoadmapPhase[] =
+    (roadmapData).roadmap ?? (roadmapData).phases ?? [];
 
   return (
     <div className="min-h-screen font-sans px-4 sm:px-8">
@@ -144,13 +175,13 @@ const RoadMapViewer = () => {
       </header>
 
       <div className="grid gap-8 lg:grid-cols-3 md:grid-cols-2">
-        {roadmap.map((phase : RoadmapPhase) => (
+        {phases.map((phase : RoadmapPhase) => (
           <RoadmapPhaseCard
             key={phase.id}
             phase={phase}
             isCurrent={phase.status === "active"}
             isCompleted={phase.status === "completed"}
-            viewDailyTask={() => router.push("/tasks")}
+            viewDailyTask={handleViewDailyTasks}
           />
         ))}
       </div>

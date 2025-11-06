@@ -1,3 +1,20 @@
+export interface Reflection {
+  id: string;
+  title: string;
+  content: string;
+  mood: "great" | "good" | "neutral" | "challenging" | "difficult";
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatMessage {
+    role: 'user' | 'model';
+    text: string;
+    sources?: { uri: string, title: string }[];
+    isError?: boolean;
+}
+
 export type LearningPathKey =
   | "technology"
   | "communication"
@@ -11,6 +28,7 @@ export interface Task {
   difficulty: "easy" | "medium" | "hard";
   description: string;
   task_status: "not-started" | "active" | "completed";
+  resources?: string[];
   completed_on?: string;
 }
 
@@ -34,6 +52,7 @@ export interface MasterRoadmap {
   title: string;
   description: string;
   phases: RoadmapPhase[];
+  roadmap?: RoadmapPhase[];
 }
 
 export interface UserRoadmap {
