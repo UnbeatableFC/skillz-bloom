@@ -1,5 +1,7 @@
 import ProfileSection from "./ProfileSection";
 import PreferencesSection from "./PreferencesSection";
+import LearningPreferences from "./LearningPreferences";
+import AccountSecurity from "./AccountSecurity";
 
 const SettingsPage = () => {
   return (
@@ -13,16 +15,10 @@ const SettingsPage = () => {
       <PreferencesSection/>
 
       {/* Learning Preferences */}
-      <div className="mb-6 p-4 border rounded">
-        <h2 className="font-semibold mb-2">Learning Preferences</h2>
-        <p>Learning preferences form will go here</p>
-      </div>
+      <LearningPreferences/>
 
       {/* Account & Security */}
-      <div className="mb-6 p-4 border rounded">
-        <h2 className="font-semibold mb-2">Account & Security</h2>
-        <p>Logout / Delete account buttons will go here</p>
-      </div>
+       <AccountSecurity/>
     </div>
   );
 };

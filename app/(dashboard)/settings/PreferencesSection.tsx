@@ -10,28 +10,47 @@ const PreferencesSection = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Apply dark mode class to <html> element
+  // Apply dark mode to root
   useEffect(() => {
     const root = document.documentElement;
     if (darkMode) {
       root.classList.add("dark");
+      localStorage.setItem("theme", "dark");
     } else {
       root.classList.remove("dark");
+      localStorage.setItem("theme", "light");
     }
   }, [darkMode]);
+
+  // Load saved language from localStorage
+  useEffect(() => {
+    const savedLang = localStorage.getItem("language");
+    if (savedLang) setLanguage(savedLang);
+  }, []);
+
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setLanguage(e.target.value);
+  };
 
   const handleSave = () => {
     setLoading(true);
     setTimeout(() => {
-      console.log({ darkMode, emailNotifications, appNotifications, language });
-      alert("Preferences saved!");
+      // Save language to localStorage
+      localStorage.setItem("language", language);
+
+      console.log({
+        darkMode,
+        emailNotifications,
+        appNotifications,
+        language,
+      });
       setLoading(false);
       setIsEditing(false);
     }, 500);
   };
 
   return (
-    <div className="mb-6 p-4 border rounded shadow-sm">
+    <div className="mb-6 p-4 border rounded shadow-sm bg-white dark:bg-gray-800 text-black dark:text-white">
       <h2 className="font-semibold text-lg mb-4">Preferences</h2>
 
       {/* Theme */}
@@ -76,13 +95,13 @@ const PreferencesSection = () => {
         <select
           value={language}
           disabled={!isEditing}
-          onChange={(e) => setLanguage(e.target.value)}
-          className="w-full border p-2 rounded"
+          onChange={handleLanguageChange}
+          className="w-full border p-2 rounded bg-white text-black dark:bg-gray-700 dark:text-white"
         >
-          <option>English</option>
-          <option>Spanish</option>
-          <option>French</option>
-          <option>Portuguese</option>
+          <option value="English">English</option>
+          <option value="Spanish">Spanish</option>
+          <option value="French">French</option>
+          <option value="Portuguese">Portuguese</option>
         </select>
       </div>
 
