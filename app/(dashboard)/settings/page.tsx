@@ -1,5 +1,5 @@
 import ProfileSection from "./ProfileSection";
-
+import PreferencesSection from "./PreferencesSection";
 
 const SettingsPage = () => {
   return (
@@ -10,10 +10,7 @@ const SettingsPage = () => {
       <ProfileSection/>
 
       {/* Preferences Section */}
-      <div className="mb-6 p-4 border rounded">
-        <h2 className="font-semibold mb-2">Preferences</h2>
-        <p>Preferences form will go here</p>
-      </div>
+      <PreferencesSection/>
 
       {/* Learning Preferences */}
       <div className="mb-6 p-4 border rounded">

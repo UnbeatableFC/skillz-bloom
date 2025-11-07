@@ -10,21 +10,21 @@ const ProfileSection = () => {
   const [loading, setLoading] = useState(false);
 
   if (!user) return <p>Loading...</p>;
-
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      // Clerk method to update user
-      await user.update({ fullName: name });
-      alert("Name updated successfully!");
-      setIsEditing(false); // turn off edit mode
-    } catch (error) {
-      console.error(error);
-      alert("Failed to update name.");
-    } finally {
-      setLoading(false);
-    }
-  };
+const handleSave = async () => {
+  setLoading(true);
+  try {
+    const [firstName, ...rest] = name.split(" "); // split full name
+    const lastName = rest.join(" "); // rest of the words
+    await user.update({ firstName, lastName }); // Clerk expects firstName & lastName
+    alert("Name updated successfully!");
+    setIsEditing(false); // turn off edit mode
+  } catch (error) {
+    console.error(error);
+    alert("Failed to update name.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="mb-6 p-4 border rounded shadow-sm">
