@@ -9,10 +9,10 @@ export interface Reflection {
 }
 
 export interface ChatMessage {
-    role: 'user' | 'model';
-    text: string;
-    sources?: { uri: string, title: string }[];
-    isError?: boolean;
+  role: "user" | "model";
+  text: string;
+  sources?: { uri: string; title: string }[];
+  isError?: boolean;
 }
 
 export type LearningPathKey =
@@ -63,7 +63,20 @@ export interface UserRoadmap {
   roadmap: RoadmapPhase[];
 }
 
+export interface ManualSkill {
+  id: string; // Firestore will generate this
+  name: string;
+  description: string;
+  createdAt: any; // We'll use a Firestore timestamp
+  evidenceLink?: string;
+  evidenceLabel?: string;
+}
+
 export interface RoadmapData extends MasterRoadmap {
     careerGoal?: string;
     learningPath?: LearningPathKey;
+}
+
+export interface CalculatedSkill extends SkillModule {
+  phaseTitle: string;
 }

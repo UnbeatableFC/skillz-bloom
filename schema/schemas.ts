@@ -15,14 +15,7 @@ export const onboardingSchema = z.object({
   educationLevel: z
     .string()
     .nonempty("Please select your education level") // 👈 Added
-    .pipe(
-      z.enum([
-        "high-school",
-        "undergraduate",
-        "graduate",
-        "professional",
-      ])
-    ),
+    .pipe(z.enum(["high-school", "undergraduate", "graduate", "professional"])),
 
   learningPath: z
     .string()
@@ -41,13 +34,31 @@ export const onboardingSchema = z.object({
     .string()
     .nonempty("Please select your available time") // 👈 Added
     .pipe(z.enum(["15-30", "30-60", "60-120", "120-plus"])),
-    
+
   careerGoal: z
     .string()
-    .min(
-      10,
-      "Please describe your career goal (at least 10 characters)"
-    )
+    .min(10, "Please describe your career goal (at least 10 characters)")
     .max(300),
 });
+
+export const manualSkillSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Skill name must be at least 2 characters")
+    .max(100, "Skill name is too long"),
+  description: z.string().max(300, "Description is too long").optional(),
+
+  // --- ADD THESE NEW FIELDS ---
+  evidenceLabel: z
+    .string()
+    .max(30, "Label is too long (e.g., GitHub, Portfolio)")
+    .optional(),
+  evidenceLink: z
+    .string()
+    .url("Please enter a valid URL (e.g., https://...)")
+    .optional()
+    .or(z.literal("")), // Allows the field to be empty
+});
+
+export type ManualSkillSchema = z.infer<typeof manualSkillSchema>;
 export type OnboardingSchema = z.infer<typeof onboardingSchema>;
