@@ -7,12 +7,12 @@ const RoadmapPhaseCard = ({
   phase,
   isCurrent,
   isCompleted,
-  
+   viewDailyTask
 }: {
   phase: RoadmapPhase;
   isCurrent: boolean;
   isCompleted: boolean;
- 
+ viewDailyTask: () => void;
 }) => {
   const progress = calculatePhaseProgress(phase);
 
@@ -84,7 +84,7 @@ const RoadmapPhaseCard = ({
 
       {isCurrent && (
         <div className="mt-6 text-center">
-          <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition duration-150" >
+          <Button onClick={viewDailyTask} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition duration-150" >
             View Daily Tasks
           </Button>
         </div>

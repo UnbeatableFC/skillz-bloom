@@ -6,8 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import {  Loader } from "lucide-react";
-
+import { Loader } from "lucide-react";
 
 const OnboardingGatekeeper = ({
   children,
@@ -41,14 +40,22 @@ const OnboardingGatekeeper = ({
             userData.onboardingComplete === false &&
             pathname !== "/onboarding"
           ) {
-            // Redirect if not complete and user isn't already on the onboarding page
+            // User hasn't completed onboarding - redirect to onboarding
             router.push("/onboarding");
+          } else if (
+            userData.onboardingComplete === true &&
+            pathname === "/onboarding"
+          ) {
+            // User has completed onboarding but is trying to access onboarding page
+            router.push("/dashboard");
+          }else if (
+            userData.onboardingComplete === true &&
+            pathname === "/"
+          ) {
+            // User has completed onboarding but is trying to access onboarding page
+            router.push("/dashboard");
           }
-
-          if (userData.onboardingComplete === true) {
-            // Redirect if complete and user has already onboarded
-           router.push("/dashboard");
-          }
+          // If onboardingComplete is true and user is NOT on onboarding page, do nothing
         } else {
           // B. User does NOT exist (First-Time Sign-Up/Sign-In)
           await setDoc(userRef, {
@@ -64,10 +71,7 @@ const OnboardingGatekeeper = ({
           }
         }
       } catch (error) {
-        console.error(
-          "Error during onboarding check/seeding:",
-          error
-        );
+        console.error("Error during onboarding check/seeding:", error);
       } finally {
         setIsChecking(false);
       }
@@ -77,7 +81,7 @@ const OnboardingGatekeeper = ({
     if (isLoaded && isSignedIn) {
       checkAndSeedUser();
     }
-  } , []);
+  }, [isLoaded, isSignedIn, user, pathname, router]);
 
   // Block rendering while checking status or if user state is unknown
   if (isChecking || !isLoaded) {

@@ -34,20 +34,16 @@ export default function DashboardLayout({
         if (userSnap.exists()) {
           const userData = userSnap.data();
           if (userData.onboardingComplete === false) {
-            // ⭐️ If onboarding is NOT complete, set state to false
             setOnboardingStatus(false);
           } else {
-            // If onboarding IS complete, set state to true
             setOnboardingStatus(true);
           }
         } else {
-          // This case shouldn't happen if the webhook worked, but handle it
           console.error("User document not found in Firestore!");
           setOnboardingStatus(false);
         }
       } else if (isLoaded && !isSignedIn) {
-        // If not signed in, let Clerk handle the sign-in redirect
-        setOnboardingStatus(true); // Don't block loading
+        setOnboardingStatus(true);
       }
     };
     checkOnboarding();
@@ -70,9 +66,8 @@ export default function DashboardLayout({
     redirect("/onboarding");
   }
 
-  // If status is true, or user is not signed in (Clerk will redirect), render children
   return (
-    <div className="min-h-screen bg-background flex w-full">
+    <div className="h-screen bg-background flex w-full overflow-hidden">
       {/* Mobile Menu Button */}
       <Button
         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -88,8 +83,9 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:static inset-y-0 left-0 z-40 w-64 bg-card border-r border-border/50 
+          fixed lg:static inset-y-0 left-0 z-40 w-72 bg-card border-r border-border/50 
           transform transition-transform duration-300 ease-in-out lg:transform-none
+          h-screen flex flex-col
           ${
             sidebarOpen
               ? "translate-x-0"
@@ -97,24 +93,24 @@ export default function DashboardLayout({
           }
         `}
       >
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b border-border/50">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 group"
-            >
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Sparkles className="w-5 h-5 text-orange-300" />
-              </div>
-              <span className="font-heading font-bold text-xl">
-                SkillzBloom
-              </span>
-            </Link>
-          </div>
+        {/* Logo - Fixed at top */}
+        <div className="shrink-0 p-6 border-b border-border/50">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-3 group"
+          >
+            <div className="w-11 h-11 rounded-xl gradient-primary flex items-center justify-center group-hover:scale-105 transition-transform shadow-md">
+              <Sparkles className="w-6 h-6 text-orange-300" />
+            </div>
+            <span className="font-heading font-bold text-xl bg-linear-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
+              SkillzBloom
+            </span>
+          </Link>
+        </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1">
+        {/* Navigation - Scrollable */}
+        <nav className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+          <div className="space-y-1">
             {navItems.map((item) => {
               const isActive = path === item.path;
               return (
@@ -123,45 +119,58 @@ export default function DashboardLayout({
                   href={item.path}
                   onClick={() => setSidebarOpen(false)}
                   className={`
-                    flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
+                    flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 group
                     ${
                       isActive
-                        ? "bg-primary text-primary-foreground font-medium shadow-sm"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? "bg-primary text-primary-foreground font-medium shadow-sm scale-[1.02]"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground hover:scale-[1.02]"
                     }
                   `}
                 >
-                  <item.icon className="w-5 h-5" />
-                  <span>{item.label}</span>
+                  <item.icon
+                    className={`w-5 h-5 ${
+                      isActive
+                        ? ""
+                        : "group-hover:scale-110 transition-transform"
+                    }`}
+                  />
+                  <span className="font-medium">{item.label}</span>
                 </Link>
               );
             })}
-          </nav>
+          </div>
+        </nav>
 
-          {/* User Section */}
-          <div className="p-4 border-t border-border/50 space-y-2">
-            <div className="flex items-center gap-3 px-4 py-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="font-heading font-semibold text-primary">
-                  <UserButton />
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">
-                  {user?.fullName}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {user?.emailAddresses[0].emailAddress}
-                </p>
-              </div>
+        {/* User Section - Fixed at bottom */}
+        <div className="shrink-0 p-4 border-t border-border/50 bg-muted/30">
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-background/50 mb-3">
+            <div className="shrink-0">
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: "w-10 h-10 rounded-full",
+                  },
+                }}
+              />
             </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm truncate text-foreground">
+                {user?.fullName || "User"}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.emailAddresses[0]?.emailAddress || ""}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
             <SignOutButton>
               <Button
                 variant="ghost"
-                className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
+                className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
-                Log out
+                <span className="font-medium">Log out</span>
               </Button>
             </SignOutButton>
           </div>
@@ -171,20 +180,26 @@ export default function DashboardLayout({
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-30"
+          className="lg:hidden fixed inset-0 bg-black/50 z-30 backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="container max-w-7xl mx-auto p-4 lg:p-8">
-          <div className="flex justify-end mb-6">
+      <div>
+        <header className="w-full h-12 pt-3 pr-12">
+          <div className="flex justify-end items-center">
             <ModeToggle />
           </div>
-          {children}
-        </div>
-      </main>
+        </header>
+        <main className="flex-1 overflow-y-auto scro h-screen">
+          <div className="min-h-full">
+            <div className="container max-w-7xl mx-auto p-4 lg:p-8">
+              {children}
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
