@@ -29,7 +29,7 @@ export interface Task {
   description: string;
   task_status: "not-started" | "active" | "completed";
   resources?: string[];
-  completed_on?: string;
+  completed_on?: string|null;
 }
 
 export interface SkillModule {
@@ -70,6 +70,11 @@ export interface ManualSkill {
   createdAt: any; // We'll use a Firestore timestamp
   evidenceLink?: string;
   evidenceLabel?: string;
+}
+
+export interface RoadmapData extends MasterRoadmap {
+    careerGoal?: string;
+    learningPath?: LearningPathKey;
 }
 
 export interface CalculatedSkill extends SkillModule {

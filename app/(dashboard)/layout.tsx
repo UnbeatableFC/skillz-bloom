@@ -186,7 +186,7 @@ export default function DashboardLayout({
       )}
 
       {/* Main Content */}
-      <div>
+      <div className="w-full">
         <header className="w-full h-12 pt-3 pr-12">
           <div className="flex justify-end items-center">
             <ModeToggle />
