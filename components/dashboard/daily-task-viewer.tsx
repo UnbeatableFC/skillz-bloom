@@ -1,10 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { doc, onSnapshot, setDoc } from "firebase/firestore";
+import { doc, onSnapshot, setDoc, DocumentData } from "firebase/firestore";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { LearningPathKey, MasterRoadmap, Task } from "@/types/types";
+import {
+  LearningPathKey,
+  MasterRoadmap,
+  Task,
+  RoadmapPhase,
+} from "@/types/types";
 import { db } from "@/lib/firebase";
 import { toast } from "sonner";
 import { Loader2, Zap } from "lucide-react";
@@ -26,12 +31,8 @@ const DailyTaskViewer = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dailyTasks, setDailyTasks] = useState<Task[]>([]);
-  const [hoursPerTask, setHoursPerTask] = useState<number | null>(
-    null
-  ); // ADD THIS
-  const [completingTask, setCompletingTask] = useState<string | null>(
-    null
-  );
+  const [hoursPerTask, setHoursPerTask] = useState<number | null>(null); // ADD THIS
+  const [completingTask, setCompletingTask] = useState<string | null>(null);
 
   const userId = user?.id;
 
@@ -75,9 +76,7 @@ const DailyTaskViewer = () => {
     const totalTasks = currentModule.tasks.length;
     const estimatedHoursPerTask =
       totalTasks > 0
-        ? Number(
-            (currentModule.estimated_hours / totalTasks).toFixed(1)
-          )
+        ? Number((currentModule.estimated_hours / totalTasks).toFixed(1))
         : null;
 
     setDailyTasks(tasksForToday);
@@ -86,24 +85,23 @@ const DailyTaskViewer = () => {
 
   // 2. REAL-TIME DATA SUBSCRIPTION
   useEffect(() => {
-    if (!isLoaded) return;
+    // Wait for Clerk to load
+    if (!isLoaded) {
+      return;
+    }
 
+    // Handle user not being signed in (This is your new logic!)
     if (!isSignedIn || !userId) {
       setError("Please sign in to view your tasks.");
       setIsLoading(false);
       return;
     }
 
-    if (typeof db === "undefined") {
-      setError("Database connection failed.");
-      setIsLoading(false);
-      return;
-    }
-
+    // At this point, we are loaded, signed in, and have a userId.
     const roadmapRef = doc(
       db,
       "users",
-      userId,
+      userId, // We can safely use userId (no '!' needed)
       "userRoadmap",
       "current"
     );
@@ -112,21 +110,14 @@ const DailyTaskViewer = () => {
       roadmapRef,
       (docSnap) => {
         if (docSnap.exists()) {
-          const data = docSnap.data() as MasterRoadmap & {
-            careerGoal?: string;
-            learningPath?: LearningPathKey;
-          };
+          const data = docSnap.data() as MasterRoadmap;
           setRoadmapData(data);
           extractDailyTasks(data);
-          setError(null);
           setIsLoading(false);
         } else {
           setError(
             "No personalized roadmap found. Please complete onboarding."
           );
-          setRoadmapData(null);
-          setDailyTasks([]);
-          setHoursPerTask(null);
           setIsLoading(false);
         }
       },
@@ -139,67 +130,113 @@ const DailyTaskViewer = () => {
 
     // Cleanup subscription on component unmount
     return () => unsubscribe();
-  }, [userId, isLoaded, isSignedIn]);
+  }, [userId, isLoaded, isSignedIn]); // <-- Added isSignedIn here
 
   // 3. TASK COMPLETION HANDLER (Updates Firestore)
   const handleTaskComplete = async (taskName: string) => {
     if (!roadmapData || !userId || typeof db === "undefined") return;
 
-    setCompletingTask(taskName);
+    // Clone the current roadmap to modify it
+    const newRoadmapData: DocumentData = JSON.parse(
+      JSON.stringify(roadmapData)
+    );
 
-    try {
-      // Clone the current roadmap to modify it
-      const newRoadmapData: MasterRoadmap = JSON.parse(
-        JSON.stringify(roadmapData)
-      );
+    let taskFound = false;
+    let moduleCompleted = false;
+    let phaseCompleted = false;
+    let nextPhaseId: string | null = null;
+    let completedModuleName: string = "";
 
-      const phases =
-        newRoadmapData.roadmap ?? newRoadmapData.phases ?? [];
-      let taskFound = false;
+    // Find and update the specific task within the roadmap structure
+    for (let i = 0; i < newRoadmapData.roadmap.length; i++) {
+      const phase = newRoadmapData.roadmap[i] as RoadmapPhase; //
 
-      // Find and update the specific task within the roadmap structure
-      for (const phase of phases) {
-        if (phase.status === "active") {
-          for (const mod of phase.modules) {
-            const task = mod.tasks.find(
-              (t) =>
-                t.name === taskName && t.task_status === "not-started"
+      if (phase.status === "active") {
+        for (const mod of phase.modules) {
+          // Find the task that was just completed
+          const task = mod.tasks.find(
+            (t) => t.name === taskName && t.task_status === "not-started"
+          );
+
+          if (task) {
+            task.task_status = "completed";
+            task.completed_on = new Date().toISOString();
+            taskFound = true;
+
+            // --- NEW LOGIC START ---
+
+            // 1. Check if this module is now complete
+            const allTasksComplete = mod.tasks.every(
+              (t) => t.task_status === "completed"
             );
-            if (task) {
-              task.task_status = "completed";
-              task.completed_on = new Date().toISOString();
-              taskFound = true;
-              break;
+
+            if (allTasksComplete && mod.module_status !== "completed") {
+              mod.module_status = "completed";
+              moduleCompleted = true;
+              completedModuleName = mod.name;
+
+              // 2. Check if this was the last module in the phase
+              const allModulesComplete = phase.modules.every(
+                (m) => m.module_status === "completed"
+              );
+
+              if (allModulesComplete) {
+                phase.status = "completed";
+                phaseCompleted = true;
+
+                // 3. Find and activate the next phase
+                const nextPhase = newRoadmapData.roadmap[i + 1] as
+                  | RoadmapPhase
+                  | undefined;
+
+                if (nextPhase) {
+                  nextPhase.status = "active";
+                  nextPhaseId = nextPhase.id;
+                  newRoadmapData.currentPhaseId = nextPhase.id; // Update the top-level tracker
+                } else {
+                  // This was the last phase!
+                  newRoadmapData.currentPhaseId = null; // Or some "completed" state
+                }
+              }
             }
+            // --- NEW LOGIC END ---
+
+            break; // Break from the 'mod' loop
           }
         }
-        if (taskFound) break;
       }
+      if (taskFound) break; // Break from the 'phase' loop
+    }
 
-      if (taskFound) {
-        const roadmapRef = doc(
-          db,
-          "users",
-          userId,
-          "userRoadmap",
-          "current"
-        );
+    if (taskFound) {
+      try {
+        const roadmapRef = doc(db, "users", userId, "userRoadmap", "current");
 
+        // Update the entire roadmap doc in Firestore
         await setDoc(roadmapRef, newRoadmapData);
-        toast.success(
-          `Task completed: ${taskName}! Keep the streak going!`
-        );
 
-        // Re-extract tasks immediately to update the list
-        extractDailyTasks(newRoadmapData);
-      } else {
-        toast.error("Task not found or already completed.");
+        // --- NEW TOAST LOGIC ---
+        // Give the user better feedback
+        if (phaseCompleted) {
+          toast.success(
+            `Phase Complete! ${
+              nextPhaseId
+                ? "Moving to the next phase!"
+                : "Congratulations, you've finished your roadmap!"
+            }`
+          );
+        } else if (moduleCompleted) {
+          toast.success(`Module Complete: ${completedModuleName}! Well done!`);
+        } else {
+          toast.success(`Task completed: ${taskName}! Keep the streak going!`);
+        }
+
+        // Re-extract tasks to update the UI
+        extractDailyTasks(newRoadmapData as MasterRoadmap);
+      } catch (err) {
+        console.error("Failed to update task status:", err);
+        toast.error("Failed to save progress. Check your connection.");
       }
-    } catch (err) {
-      console.error("Failed to update task status:", err);
-      toast.error("Failed to save progress. Check your connection.");
-    } finally {
-      setCompletingTask(null);
     }
   };
 
@@ -265,9 +302,7 @@ const DailyTaskViewer = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <p className="text-lg text-gray-600">
-                <span className="font-semibold">
-                  {activePhase?.title}
-                </span>
+                <span className="font-semibold">{activePhase?.title}</span>
               </p>
               {activeModule && (
                 <p className="text-base text-indigo-600 font-medium mt-1">
@@ -315,17 +350,11 @@ const DailyTaskViewer = () => {
               All caught up! 🎉
             </h3>
             <p className="text-lg text-indigo-700">
-              You&apos;ve completed all your daily tasks. Check out
-              the
-              <span className="font-semibold">
-                {" "}
-                Learning Roadmap
-              </span>{" "}
-              for what&apos;s next, or talk to your{" "}
-              <span className="font-semibold">
-                AI Learning Coach
-              </span>{" "}
-              for bonus challenges!
+              You&apos;ve completed all your daily tasks. Check out the
+              <span className="font-semibold"> Learning Roadmap</span> for
+              what&apos;s next, or talk to your{" "}
+              <span className="font-semibold">AI Learning Coach</span> for bonus
+              challenges!
             </p>
           </div>
         )}
