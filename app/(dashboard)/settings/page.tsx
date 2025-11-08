@@ -1,13 +1,26 @@
+import ProfileSection from "./ProfileSection";
+import PreferencesSection from "./PreferencesSection";
+import LearningPreferences from "./LearningPreferences";
+import AccountSecurity from "./AccountSecurity";
 
-import DailyTaskViewer from '@/components/dashboard/test'
-import React from 'react'
-
-const TestPage = () => {
+const SettingsPage = () => {
   return (
-    <div>
-        <DailyTaskViewer />
-    </div>
-  )
-}
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-6">Settings</h1>
 
-export default TestPage
+      {/* Profile Section */}
+      <ProfileSection/>
+
+      {/* Preferences Section */}
+      <PreferencesSection/>
+
+      {/* Learning Preferences */}
+      <LearningPreferences/>
+
+      {/* Account & Security */}
+       <AccountSecurity/>
+    </div>
+  );
+};
+
+export default SettingsPage;
