@@ -1,20 +1,28 @@
 import { calculatePhaseProgress } from "@/hooks/calculate-phase-progress";
 import { RoadmapPhase } from "@/types/types";
-import { ArrowRight, CheckCircle, Clock, Zap } from "lucide-react";
+import { ArrowRight, Check, CheckCircle, Clock, Zap } from "lucide-react";
 import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
 
 const RoadmapPhaseCard = ({
   phase,
   isCurrent,
   isCompleted,
-   viewDailyTask
+  isNotStarted,
+  viewDailyTask,
+  handleCompletePhase,
 }: {
   phase: RoadmapPhase;
   isCurrent: boolean;
   isCompleted: boolean;
- viewDailyTask: () => void;
+  isNotStarted: boolean;
+  viewDailyTask: () => void;
+  handleCompletePhase: (phase: RoadmapPhase) => void;
 }) => {
   const progress = calculatePhaseProgress(phase);
+  const allModulesCompleted = phase.modules.every(
+    (m) => m.module_status === "completed"
+  );
 
   // Determine card styling based on status
   let cardClass =
@@ -30,6 +38,12 @@ const RoadmapPhaseCard = ({
       "border-indigo-600 bg-indigo-50 shadow-indigo-200/50";
     icon = <Zap className="w-6 h-6 text-indigo-600 animate-pulse" />;
     cardClass += " ring-4 ring-indigo-200/50";
+  } else if (isNotStarted) {
+    borderColor = "border-gray-300 bg-gray-50";
+    icon = (
+      <Clock className="w-6 h-6 text-gray-400 animate-pulse-slow" />
+    );
+    cardClass += " opacity-70 hover:opacity-100 transition-opacity";
   }
 
   return (
@@ -61,6 +75,18 @@ const RoadmapPhaseCard = ({
       <p className="text-right text-sm font-medium text-gray-600">
         {progress}% Complete
       </p>
+      {
+        
+        isCompleted && (<div className="flex justify-end mt-1"><Badge className={"bg-green-200/75 text-slate-600"}><Check /> Completed</Badge></div>)
+      }
+      {
+        
+        isNotStarted && (<div className="flex justify-end mt-1"><Badge className={"bg-gray-200/75 text-slate-600"}><Clock /> Not Started</Badge></div>)
+      }
+      {
+        
+        isCurrent && (<div className="flex justify-end mt-1"><Badge className={"bg-purple-200/75 text-slate-600"}><Zap /> Active</Badge></div>)
+      }
 
       {/* Modules List (showing first 3 skills) */}
       <div className="mt-4 pt-4 border-t border-gray-100">
@@ -82,10 +108,37 @@ const RoadmapPhaseCard = ({
         </ul>
       </div>
 
-      {isCurrent && (
+      {/* {isCurrent && (
         <div className="mt-6 text-center">
           <Button onClick={viewDailyTask} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition duration-150" >
             View Daily Tasks
+          </Button>
+        </div>
+      )} */}
+      {isCurrent && allModulesCompleted && !isCompleted ? (
+        // ✅ Case: Current phase completed → show finalize button
+        <div className="mt-6 text-center">
+          <Button
+            onClick={() => handleCompletePhase(phase)}
+            className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white"
+          >
+            Finalize Phase & Advance
+          </Button>
+        </div>
+      ) : (
+        // 🟣 Case: Otherwise show "View Tasks" (disabled if not started)
+        <div className="mt-6 text-center">
+          <Button
+            onClick={viewDailyTask}
+            disabled={isNotStarted}
+            className={`w-full font-bold py-2 px-4 rounded-xl shadow-lg transition duration-150 
+        ${
+          isNotStarted
+            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+            : "bg-indigo-600 hover:bg-indigo-700 text-white"
+        }`}
+          >
+            {isNotStarted ? "Not Started Yet" : "View Tasks"}
           </Button>
         </div>
       )}

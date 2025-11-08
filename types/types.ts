@@ -29,7 +29,7 @@ export interface Task {
   description: string;
   task_status: "not-started" | "active" | "completed";
   resources?: string[];
-  completed_on?: string;
+  completed_on?: string|null;
 }
 
 export interface SkillModule {
@@ -61,4 +61,9 @@ export interface UserRoadmap {
   learningPath: string;
   currentPhaseId: string;
   roadmap: RoadmapPhase[];
+}
+
+export interface RoadmapData extends MasterRoadmap {
+    careerGoal?: string;
+    learningPath?: LearningPathKey;
 }
