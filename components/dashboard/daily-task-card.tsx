@@ -1,28 +1,43 @@
+"use client"
+
 import React from "react";
 import { Task } from "@/types/types";
-import { CheckCircle2, ExternalLink, Clock } from "lucide-react";
+import { CheckCircle2, ExternalLink, Clock, Loader2, Play } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../ui/button";
 
 interface DailyTaskCardProps {
-  task: Task;
-  onComplete: (taskName: string) => void;
-  isCompleting?: boolean;
-  onTaskClick?: () => void;
-  estimatedHours?: number;
+   task: Task;
+    onStart: (taskName: string) => void;
+    onComplete: (taskName: string) => void;
+    isStarting: boolean;
+    isCompleting: boolean;
+    estimatedHours?: number;
+    onTaskClick: () => void;
 }
 
 const DailyTaskCard: React.FC<DailyTaskCardProps> = ({
-  task,
+ task,
+  onStart,
   onComplete,
-  isCompleting = false,
-  onTaskClick,
+  isStarting,
+  isCompleting,
   estimatedHours,
+  onTaskClick,
 }) => {
+  const isActive = task.task_status === "active";
+  const isNotStarted = task.task_status === "not-started";
+
   return (
     <div
       onClick={onTaskClick}
-      className="flex flex-col bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition duration-200 overflow-hidden hover:border-indigo-300 cursor-pointer hover:scale-105 transform"
+      className={`flex flex-col bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition duration-200 overflow-hidden hover:border-indigo-300 cursor-pointer hover:scale-105 transform
+        
+        ${
+        isActive 
+          ? 'border-yellow-500 ring-2 ring-yellow-200' 
+          : 'border-indigo-600'
+      }`}
     >
       {/* Header with gradient */}
       <div className="bg-linear-to-r from-indigo-50 to-purple-50 px-6 py-4 border-b border-gray-200">
@@ -105,23 +120,52 @@ const DailyTaskCard: React.FC<DailyTaskCardProps> = ({
               : "text-green-800 bg-green-100"
           }`}
         >
-          {task.task_status === "not-started"
-            ? "Not Started"
-            : "Completed"}
+          {isNotStarted
+            && "Not Started"
+            }
+          {isActive
+            && "Active"
+            }
         </span>
-        {task.task_status === "not-started" && (
+       
+
+         {isNotStarted ? (
           <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              onComplete(task.name);
-            }}
-            disabled={isCompleting}
+            onClick={() => onStart(task.name)}
+            disabled={isStarting}
             className="px-3 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition duration-150 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 whitespace-nowrap text-sm"
           >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>{isCompleting ? "..." : "Done"}</span>
+            {isStarting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Starting...
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 mr-2" />
+                Start Task
+              </>
+            )}
           </Button>
-        )}
+        ) : isActive ? (
+          <Button
+            onClick={() => onComplete(task.name)}
+            disabled={isCompleting}
+            className="w-fit bg-indigo-600 hover:bg-indigo-700 text-white"
+          >
+            {isCompleting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Completing...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Mark Complete
+              </>
+            )}
+          </Button>
+        ) : null}
       </div>
     </div>
   );
