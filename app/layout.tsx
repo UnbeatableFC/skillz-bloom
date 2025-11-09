@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import {  Inter } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
@@ -9,8 +9,7 @@ import OnboardingGatekeeper from "@/components/general/onboarding-gatekeeper";
 const inter = Inter({
    variable: '--font-inter',
   subsets: ['latin'],
-  // Optional: specify weights or styles
-  weight: ['400', '700']
+  
 });
 
 

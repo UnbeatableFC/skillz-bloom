@@ -22,6 +22,13 @@ export type LearningPathKey =
   | "creative"
   | "personal-dev";
 
+export interface LearningPathData {
+  value: string;
+  title: string;
+  description: string;
+  icon?: string;
+}
+
 export interface Task {
   name: string;
   type: "read" | "write" | "practice" | "project";
@@ -29,7 +36,7 @@ export interface Task {
   description: string;
   task_status: "not-started" | "active" | "completed";
   resources?: string[];
-  completed_on?: string|null;
+  completed_on?: string | null;
 }
 
 export interface SkillModule {
@@ -63,20 +70,42 @@ export interface UserRoadmap {
   roadmap: RoadmapPhase[];
 }
 
-export interface ManualSkill {
-  id: string; // Firestore will generate this
-  name: string;
-  description: string;
-  createdAt: any; // We'll use a Firestore timestamp
-  evidenceLink?: string;
-  evidenceLabel?: string;
-}
-
 export interface RoadmapData extends MasterRoadmap {
-    careerGoal?: string;
-    learningPath?: LearningPathKey;
+  careerGoal?: string;
+  learningPath?: LearningPathKey;
 }
 
 export interface CalculatedSkill extends SkillModule {
   phaseTitle: string;
+}
+
+export type ThemeTypes = "light" | "dark" | "system";
+
+export type TaskDensityType = "low" | "medium" | "high";
+
+export interface UserProfile {
+  name?: string;
+  username?: string;
+  email: string;
+  clerkId: string;
+  profilePicture?: string;
+  careerGoal?: string;
+  learningPath?: LearningPathKey;
+  skills?: string[];
+  createdAt: string;
+  preferences?: {
+    theme: ThemeTypes;
+    taskDensity: TaskDensityType;
+    emailNotifications: boolean;
+    inAppNotifications: boolean;
+  };
+}
+
+export interface ManualSkill {
+  id: string; // Firestore will generate this
+  name: string;
+  description: string;
+// We'll use a Firestore timestamp
+  evidenceLink?: string;
+  evidenceLabel?: string;
 }

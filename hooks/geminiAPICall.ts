@@ -52,11 +52,11 @@ export const generateContentWithRetry = async (
                 const groundingMetadata = candidate.groundingMetadata;
                 if (groundingMetadata && groundingMetadata.groundingAttributions) {
                     sources = groundingMetadata.groundingAttributions
-                        .map(attribution => ({
+                        .map((attribution : { web?: { uri?: string; title?: string } }) => ({
                             uri: attribution.web?.uri,
                             title: attribution.web?.title,
                         }))
-                        .filter(source => source.uri && source.title);
+                        .filter((source: { uri?: string; title?: string }) => source.uri && source.title);
                 }
                 
                 return { text, sources };
