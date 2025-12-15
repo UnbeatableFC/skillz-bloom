@@ -23,7 +23,7 @@ import { MASTER_ROADMAPS } from "@/lib/master-roadmap";
 export async function handleOnboardingSubmitIntegration(
   data: OnboardingSchema,
   db: Firestore = getFirestore(), // Firebase Firestore instance
-  userId: string, // Current Clerk user ID
+  userId: string // Current Clerk user ID
 ): Promise<void> {
   const selectedPath = data.learningPath as LearningPathKey; // Narrowing type for lookup
   const masterRoadmap = MASTER_ROADMAPS[selectedPath];
@@ -97,7 +97,13 @@ export async function handleOnboardingSubmitIntegration(
     const userRef = doc(db, "users", userId);
     await setDoc(
       userRef,
-      { onboardingComplete: true },
+      {
+        onboardingComplete: true,
+        fullName: data.fullName,
+        age: data.age,
+        educationLevel: data.educationLevel, // Default for z.enum()
+        availableTime: data.availableTime,
+      },
       { merge: true }
     );
 

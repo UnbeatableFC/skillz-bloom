@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useClerk, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import {
   doc,
@@ -72,6 +72,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   LearningPathKey,
+  RoadmapData,
   TaskDensityType,
   ThemeTypes,
   UserProfile,
@@ -82,14 +83,15 @@ import { learningPaths } from "@/lib/data";
 
 const SettingsPage = () => {
   const { user, isLoaded } = useUser();
+  const { client, session } = useClerk();
   const router = useRouter();
   const userId = user?.id;
 
   // State management
   const [activeTab, setActiveTab] = useState("profile");
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(
-    null
-  );
+  const [userProfile, setUserProfile] = useState<
+    UserProfile  | null
+  >(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -97,6 +99,7 @@ const SettingsPage = () => {
   // Form data
   const [formData, setFormData] = useState({
     name: "",
+    age: 0,
     username: "",
     email: "",
     profilePicture: "",
@@ -130,23 +133,44 @@ const SettingsPage = () => {
     const fetchUserProfile = async () => {
       try {
         const userDocRef = doc(db, "users", userId);
-        const userDoc = await getDoc(userDocRef);
+        const roadmapRef = doc(
+          db,
+          "users",
+          userId,
+          "userRoadmap",
+          "current"
+        );
 
+        const [userDoc, roadmapDoc] = await Promise.all([
+          getDoc(userDocRef),
+          getDoc(roadmapRef),
+        ]);
+
+        // --- Scenario 1: User Profile Exists (Roadmap may or may not exist) ---
         if (userDoc.exists()) {
           const data = userDoc.data() as UserProfile;
+
+          // Extract careerGoal safely (defaults to empty string if roadmapDoc doesn't exist)
+          const careerGoal = roadmapDoc.exists()
+            ? (roadmapDoc.data() as RoadmapData).careerGoal || ""
+            : "";
+
           setUserProfile(data);
 
-          // Populate form
+          // Populate form (using 'name' for the form field, based on your previous code)
           setFormData({
-            name: data.name || "",
+            name: data.fullName || "", // Assuming form key is 'name'
             username: data.username || "",
             email:
               data.email ||
               user.primaryEmailAddress?.emailAddress ||
               "",
+            age: data.age || 0,
             profilePicture:
               data.profilePicture || user.imageUrl || "",
-            careerGoal: data.careerGoal || "",
+
+            careerGoal: careerGoal, // Safely extracted from roadmapDoc or set to ""
+
             learningPath:
               data.learningPath || ("" as LearningPathKey),
             skills: data.skills || [],
@@ -156,26 +180,41 @@ const SettingsPage = () => {
           if (data.preferences) {
             setPreferences(data.preferences);
           }
-        } else {
-          // Create initial profile from Clerk data
+        }
+
+        // --- Scenario 2: User Profile Does NOT Exist (First Time Login) ---
+        else {
+          // Create initial profile from Clerk data, including default state fields
           const initialProfile: UserProfile = {
             email: user.primaryEmailAddress?.emailAddress || "",
             clerkId: userId,
             createdAt: new Date().toISOString(),
             profilePicture: user.imageUrl,
-            name: user.fullName || "",
+            fullName: user.fullName || "",
             username: user.username || "",
+
+            // IMPORTANT: Include required default fields for new users
+            onboardingCompleted: false,
+            learningPath: "" as LearningPathKey,
+            skills: [],
           };
 
           await setDoc(userDocRef, initialProfile);
           setUserProfile(initialProfile);
-          setFormData({
-            ...formData,
+
+          // Use functional update to populate form data
+          setFormData((f) => ({
+            ...f,
             email: initialProfile.email,
             profilePicture: initialProfile.profilePicture || "",
-            name: initialProfile.name || "",
+            name: initialProfile.fullName || "", // Using fullName consistently
             username: initialProfile.username || "",
-          });
+            // Set other defaults if your form state requires them
+            careerGoal: "",
+            age: 0,
+            learningPath: "" as LearningPathKey,
+            skills: [],
+          }));
         }
       } catch (error) {
         console.error("Error fetching user profile:", error);
@@ -188,20 +227,20 @@ const SettingsPage = () => {
     fetchUserProfile();
   }, [
     userId,
-    formData,
     user?.fullName,
     user?.imageUrl,
     user?.primaryEmailAddress,
     user?.username,
+    // The dependency array is now clean and correct!
   ]);
 
   // Sync with Clerk when profile updates
   const syncWithClerk = async (updates: Partial<UserProfile>) => {
     try {
-      if (updates.name && user) {
+      if (updates.fullName && user) {
         await user.update({
-          firstName: updates.name.split(" ")[0],
-          lastName: updates.name.split(" ").slice(1).join(" "),
+          firstName: updates.fullName.split(" ")[0],
+          lastName: updates.fullName.split(" ").slice(1).join(" "),
         });
       }
 
@@ -264,22 +303,50 @@ const SettingsPage = () => {
     setIsSaving(true);
 
     try {
-      const updates: Partial<UserProfile> = {
-        name: formData.name,
+      // --- 1. Updates for the main User Document (/users/userId) ---
+      const userUpdates: Partial<UserProfile> = {
+        fullName: formData.name,
         username: formData.username,
         profilePicture: formData.profilePicture,
-        careerGoal: formData.careerGoal,
         skills: formData.skills,
+        // NOTE: careerGoal is removed from here as it lives in the roadmap doc
       };
 
       const userDocRef = doc(db, "users", userId);
-      await updateDoc(userDocRef, updates);
+      await updateDoc(userDocRef, userUpdates);
 
-      // Sync with Clerk
-      await syncWithClerk(updates);
+      // --- 2. Updates for the Roadmap Document (/users/userId/userRoadmap/current) ---
+      // This is where careerGoal and potentially other roadmap-related fields live.
+      const roadmapUpdates = {
+        careerGoal: formData.careerGoal,
+        // Add any other fields that live in the roadmap document here
+      };
 
-      setUserProfile({ ...userProfile!, ...updates });
-      toast.success("Profile updated successfully!");
+      const roadmapRef = doc(
+        db,
+        "users",
+        userId,
+        "userRoadmap",
+        "current"
+      );
+
+      // Use setDoc with merge: true to update the document,
+      // as updateDoc will fail if the roadmap document doesn't exist yet.
+      await setDoc(roadmapRef, roadmapUpdates, { merge: true });
+
+      // --- 3. Local State and Cleanup ---
+
+      // Sync with Clerk (assuming this only uses fields from the main user doc)
+      await syncWithClerk(userUpdates);
+
+      // Update local state by merging updates from both documents
+      setUserProfile({
+        ...userProfile!,
+        ...userUpdates,
+        careerGoal: formData.careerGoal, // Update local careerGoal from form
+      });
+
+      toast.success("Profile and Career Goal updated successfully!");
     } catch (error) {
       console.error("Error saving profile:", error);
       toast.error("Failed to save profile");
@@ -322,7 +389,10 @@ const SettingsPage = () => {
     try {
       // Update user profile
       const userDocRef = doc(db, "users", userId);
-      await updateDoc(userDocRef, { learningPath: newLearningPath });
+      await updateDoc(userDocRef, {
+        learningPath: newLearningPath,
+        onboardingComplete: false,
+      });
 
       // Archive old roadmap (optional)
       const roadmapRef = doc(
@@ -439,13 +509,31 @@ const SettingsPage = () => {
 
   // Delete account
   const handleDeleteAccount = async () => {
-    if (!userId || !user) return;
+    if (!userId || !user || !session) return;
 
     setShowDeleteDialog(false);
     setIsSaving(true);
 
     try {
-      // Delete all user data from Firebase
+      // 1. **CLERK RE-AUTHORIZATION STEP**
+      // This prompts the user to re-verify their identity (e.g., password).
+      // If successful, Clerk updates the session, allowing the delete operation.
+      try {
+        await session?.touch();
+      } catch (reauthorizeError) {
+        // Handle cancellation or failure during re-authorization
+        console.error(
+          "Re-authorization failed or cancelled:",
+          reauthorizeError
+        );
+        toast.error(
+          "Account deletion cancelled or verification failed."
+        );
+        setIsSaving(false); // Stop saving state
+        return; // Exit the function if re-authorization fails
+      }
+
+      // --- Firebase Deletion (Code from previous fix) ---
       const userDocRef = doc(db, "users", userId);
       const roadmapRef = doc(
         db,
@@ -460,7 +548,8 @@ const SettingsPage = () => {
         deleteDoc(roadmapRef),
       ]);
 
-      // Delete Clerk account
+      // 2. **Execute Clerk Deletion**
+      // This should now pass because the session was just re-authorized.
       await user.delete();
 
       toast.success("Account deleted successfully");

@@ -84,8 +84,9 @@ export type ThemeTypes = "light" | "dark" | "system";
 export type TaskDensityType = "low" | "medium" | "high";
 
 export interface UserProfile {
-  name?: string;
+  fullName?: string;
   username?: string;
+  age?: number;
   email: string;
   clerkId: string;
   profilePicture?: string;
@@ -93,6 +94,7 @@ export interface UserProfile {
   learningPath?: LearningPathKey;
   skills?: string[];
   createdAt: string;
+  onboardingCompleted? : boolean
   preferences?: {
     theme: ThemeTypes;
     taskDensity: TaskDensityType;

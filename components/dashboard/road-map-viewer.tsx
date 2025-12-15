@@ -26,7 +26,6 @@ import {
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { calculateProgress } from "@/hooks/calculate-progress";
 import Analytics from "./analytics";
 
 // --- Component ---
@@ -141,8 +140,8 @@ const RoadMapViewer = () => {
       } else {
         router.push("/tasks");
       }
-    } 
-    
+    }
+
     if (completedPhase) {
       router.push("/dashboard/history");
     }
